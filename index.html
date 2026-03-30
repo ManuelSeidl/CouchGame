@@ -201,6 +201,13 @@ input { width: 200px; }
   width: 100%;
   max-width: 400px;
 }
+
+#gameHint {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 10px;
+  text-align: center;
+}
 </style>
 </head>
 <body>
@@ -227,6 +234,7 @@ input { width: 200px; }
 
 <!-- GAME -->
 <div id="game" class="hidden">
+  <div id="gameHint">Klicke auf deinen Namen</div>
   <div id="gameContainer"></div>
   <button class="btn beenden" onclick="showExitModal()">Beenden</button>
 </div>
@@ -248,7 +256,7 @@ function addPlayer(){
   const input = document.getElementById("nameInput");
   let name = input.value.trim();
   if(!name) return;
-  if(name.length > 20) name = name.slice(0,20); // zusätzlich sichern
+  if(name.length > 20) name = name.slice(0,20);
   players.push(name);
   input.value="";
   savePlayers();
