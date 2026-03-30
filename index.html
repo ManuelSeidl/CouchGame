@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CouchGame</title>
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: #f5f5f5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+h1#appTitle {
+  font-size: 32px;
+  color: #2c3e50;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+h2 {
+  margin-top: 20px;
+  color: #555;
+  font-size: 20px;
+  text-align: center;
+}
+
+input, button {
+  padding: 10px;
+  margin: 5px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+input { width: 200px; }
+
+.player-list {
+  margin: 15px 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.player {
+  background: #fff;
+  padding: 10px 15px;
+  margin: 5px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: transform 0.2s;
+}
+
+.player:hover { transform: scale(1.05); }
+
+.delete-btn {
+  background: #e74c3c;
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  width: 18px; height: 18px;
+  line-height: 18px;
+  text-align: center;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.btn {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 10px;
+  background: #3498db;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transition: 0.2s all;
+  margin: 5px;
+  text-align: center;
+}
+
+.btn:hover { background: #2980b9; transform: scale(1.05); }
+
+.hidden { display: none; }
+
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.3s;
+}
+
+.modal.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 25px 20px;
+  max-width: 320px;
+  width: 90%;
+  border-radius: 15px;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.modal-buttons .btn {
+  width: 120px;
+  font-size: 16px;
+  padding: 12px 0;
+}
+
+@keyframes fadeIn {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.team-section {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.team-section .btn {
+  flex: 1 1 28%; /* Drei Buttons pro Zeile */
+  min-width: 80px;
+  max-width: 100px;
+  height: 60px; /* 20% kleiner */
+  font-size: 16px;
+}
+
+#game button.beenden {
+  width: 220px;
+  background:#555;
+  margin: 20px auto;
+  display: block; /* zentriert */
+}
+</style>
+</head>
+<body>
+
+<h1 id="appTitle">CouchGame</h1>
+
+<!-- SETUP -->
+<div id="setup">
+  <input id="nameInput" placeholder="Name eingeben">
+  <button class="btn" onclick="addPlayer()">Hinzufügen</button>
+
+  <div class="player-list" id="playerList"></div>
+
+  <div>
+    <label style="font-weight:bold;">Teamanzahl:</label>
+    <input type="number" id="teamCount" value="2" min="2" step="1" onkeydown="return false;" style="width:80px; font-size:18px; text-align:center;">
+  </div>
+
+  <button class="btn" style="width:220px;" onclick="startGame()">Spiel starten</button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="hidden">
+  <div id="gameContainer"></div>
+  <button class="btn beenden" onclick="showExitModal()">Beenden</button>
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="modal" onclick="closeModal()">
+  <div class="modal-content" id="modalText"></div>
+</div>
+
+<script>
+let players = JSON.parse(localStorage.getItem("players")) || [];
+let assignments = {};
+let teams = {};
+
+function savePlayers(){ localStorage.setItem("players", JSON.stringify(players)); }
+
+function addPlayer(){
+  const input = document.getElementById("nameInput");
+  const name = input.value.trim();
+  if(!name) return;
+  players.push(name);
+  input.value="";
+  savePlayers();
+  renderPlayers();
+}
+
+function renderPlayers(){
+  const list = document.getElementById("playerList");
+  list.innerHTML="";
+  players.forEach(p=>{
+    const div=document.createElement("div");
+    div.className="player";
+    div.innerText=p;
+
+    const del=document.createElement("div");
+    del.className="delete-btn";
+    del.innerText="×";
+    del.onclick=(e)=>{
+      e.stopPropagation();
+      players.splice(players.indexOf(p),1);
+      savePlayers();
+      renderPlayers();
+    };
+    div.appendChild(del);
+    list.appendChild(div);
+  });
+}
+
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+  return array;
+}
+
+function startGame(){
+  if(players.length<2){ alert("Mindestens 2 Spieler!"); return; }
+
+  const teamCount=parseInt(document.getElementById("teamCount").value);
+
+  let teamNumbers=[];
+  for(let i=1;i<=teamCount;i++) teamNumbers.push(i);
+  let shuffledTeams=shuffle([...Array(players.length).keys()].map(i=>teamNumbers[i%teamCount]));
+  teams={};
+  players.forEach((p,i)=> teams[p]=shuffledTeams[i]);
+
+  const shuffledNames = shuffle([...players]);
+  assignments={};
+  players.forEach((p,i)=> assignments[p]=shuffledNames[i]);
+
+  document.getElementById("setup").classList.add("hidden");
+  document.getElementById("game").classList.remove("hidden");
+  renderGameScreen();
+}
+
+function renderGameScreen(){
+  const container=document.getElementById("gameContainer");
+  container.innerHTML="";
+
+  const sortedPlayers=[...players].sort((a,b)=>teams[a]-teams[b]);
+  let currentTeam=0;
+  sortedPlayers.forEach(p=>{
+    if(teams[p]!==currentTeam){
+      const teamHeader=document.createElement("h2");
+      teamHeader.innerText="Team " + teams[p];
+      container.appendChild(teamHeader);
+
+      const teamSection=document.createElement("div");
+      teamSection.className="team-section";
+      container.appendChild(teamSection);
+      currentTeam=teams[p];
+    }
+    const teamSection=document.getElementsByClassName("team-section")[currentTeam-1];
+    const btn=document.createElement("button");
+    btn.className="btn";
+    btn.innerText=p;
+    btn.onclick=()=>showNameModal(p);
+    teamSection.appendChild(btn);
+  });
+}
+
+function showNameModal(player){
+  const modal=document.getElementById("modal");
+  document.getElementById("modalText").innerHTML=
+    `${player}: Du bist ${assignments[player]}<div class="modal-buttons"><button class="btn" onclick="closeModal()">OK</button></div>`;
+  modal.classList.add("show");
+}
+
+function closeModal(){
+  document.getElementById("modal").classList.remove("show");
+}
+
+function showExitModal(){
+  const modal=document.getElementById("modal");
+  document.getElementById("modalText").innerHTML=
+    "Spiel beenden? Der aktuelle Stand geht verloren" +
+    "<div class='modal-buttons'>" +
+    "<button class='btn' onclick='exitGame()'>Ja, beenden</button>" +
+    "<button class='btn' style='background:#e74c3c;' onclick='closeModal()'>Abbrechen</button>" +
+    "</div>";
+  modal.classList.add("show");
+}
+
+function exitGame(){
+  closeModal();
+  backToSetup();
+}
+
+function backToSetup(){
+  document.getElementById("game").classList.add("hidden");
+  document.getElementById("setup").classList.remove("hidden");
+  assignments={};
+  teams={};
+  renderPlayers();
+}
+
+renderPlayers();
+</script>
+</body>
+</html>
