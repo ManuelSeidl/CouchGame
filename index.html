@@ -32,7 +32,7 @@ h2 {
 
 input, button {
   padding: 10px;
-  margin: 5px;
+  margin: 5px 0;
   font-size: 16px;
   border-radius: 6px;
   border: 1px solid #ccc;
@@ -44,7 +44,7 @@ input { width: 200px; }
   margin: 15px 0;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .player {
@@ -82,7 +82,7 @@ input { width: 200px; }
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
   transition: 0.2s all;
-  margin: 5px;
+  margin: 5px 0;
   text-align: center;
 }
 
@@ -132,6 +132,7 @@ input { width: 200px; }
   width: 120px;
   font-size: 16px;
   padding: 12px 0;
+  margin: 0 5px;
 }
 
 @keyframes fadeIn {
@@ -143,15 +144,15 @@ input { width: 200px; }
   width: 100%;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   margin-bottom: 15px;
 }
 
 .team-section .btn {
-  flex: 1 1 28%; /* Drei Buttons pro Zeile */
+  flex: 1 1 28%;
   min-width: 80px;
   max-width: 100px;
-  height: 60px; /* 20% kleiner */
+  height: 50px;
   font-size: 16px;
 }
 
@@ -159,7 +160,46 @@ input { width: 200px; }
   width: 220px;
   background:#555;
   margin: 20px auto;
-  display: block; /* zentriert */
+  display: block;
+}
+
+.team-btn {
+  width: 50px;
+  background: #3498db;
+  color: white;
+  border-radius: 10px;
+  margin-left: 5px;
+}
+
+.team-btn.active { background: #27ae60; }
+
+.team-selection {
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+#setup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* linksbündig */
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+#setup.hidden, #game.hidden {
+  display: none; /* komplett ausblenden */
+}
+
+#game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
 }
 </style>
 </head>
@@ -169,14 +209,17 @@ input { width: 200px; }
 
 <!-- SETUP -->
 <div id="setup">
-  <input id="nameInput" placeholder="Name eingeben">
+  <input id="nameInput" placeholder="Name eingeben" maxlength="20">
   <button class="btn" onclick="addPlayer()">Hinzufügen</button>
 
   <div class="player-list" id="playerList"></div>
 
-  <div>
+  <!-- Teamanzahl Buttons inline -->
+  <div class="team-selection">
     <label style="font-weight:bold;">Teamanzahl:</label>
-    <input type="number" id="teamCount" value="2" min="2" step="1" onkeydown="return false;" style="width:80px; font-size:18px; text-align:center;">
+    <button class="btn team-btn" data-team="2" onclick="selectTeam(this)">2</button>
+    <button class="btn team-btn" data-team="3" onclick="selectTeam(this)">3</button>
+    <button class="btn team-btn" data-team="4" onclick="selectTeam(this)">4</button>
   </div>
 
   <button class="btn" style="width:220px;" onclick="startGame()">Spiel starten</button>
@@ -197,13 +240,15 @@ input { width: 200px; }
 let players = JSON.parse(localStorage.getItem("players")) || [];
 let assignments = {};
 let teams = {};
+let selectedTeamCount = 2;
 
 function savePlayers(){ localStorage.setItem("players", JSON.stringify(players)); }
 
 function addPlayer(){
   const input = document.getElementById("nameInput");
-  const name = input.value.trim();
+  let name = input.value.trim();
   if(!name) return;
+  if(name.length > 20) name = name.slice(0,20); // zusätzlich sichern
   players.push(name);
   input.value="";
   savePlayers();
@@ -232,6 +277,12 @@ function renderPlayers(){
   });
 }
 
+function selectTeam(button){
+  document.querySelectorAll('.team-btn').forEach(b=>b.classList.remove('active'));
+  button.classList.add('active');
+  selectedTeamCount = parseInt(button.getAttribute('data-team'));
+}
+
 function shuffle(array){
   for(let i=array.length-1;i>0;i--){
     const j=Math.floor(Math.random()*(i+1));
@@ -241,16 +292,17 @@ function shuffle(array){
 }
 
 function startGame(){
-  if(players.length<2){ alert("Mindestens 2 Spieler!"); return; }
+  if(players.length < 2){ alert("Mindestens 2 Spieler!"); return; }
+  const teamCount = selectedTeamCount;
 
-  const teamCount=parseInt(document.getElementById("teamCount").value);
-
+  // Teams zufällig zuweisen
   let teamNumbers=[];
   for(let i=1;i<=teamCount;i++) teamNumbers.push(i);
   let shuffledTeams=shuffle([...Array(players.length).keys()].map(i=>teamNumbers[i%teamCount]));
   teams={};
   players.forEach((p,i)=> teams[p]=shuffledTeams[i]);
 
+  // Namen zufällig zuweisen
   const shuffledNames = shuffle([...players]);
   assignments={};
   players.forEach((p,i)=> assignments[p]=shuffledNames[i]);
@@ -321,7 +373,11 @@ function backToSetup(){
   renderPlayers();
 }
 
-renderPlayers();
+// Standardmäßig Team 2 aktiv markieren beim Laden
+window.onload = function(){
+  selectTeam(document.querySelector('.team-btn[data-team="2"]'));
+  renderPlayers();
+};
 </script>
 </body>
 </html>
