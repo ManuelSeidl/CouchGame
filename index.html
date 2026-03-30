@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>CouchGame Pro</title>
 <style>
     :root { 
@@ -11,24 +11,36 @@
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { 
-        font-family: 'Segoe UI', Roboto, sans-serif; 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
         margin: 0; padding: 20px; background: var(--gray); 
         display: flex; flex-direction: column; align-items: center; 
-        color: var(--dark);
+        color: var(--dark); padding-top: 40px;
     }
 
-    #settings-container { position: absolute; top: 15px; right: 15px; z-index: 100; }
-    #settings-btn { font-size: 28px; background: none; border: none; cursor: pointer; padding: 5px; }
+    #settings-container { position: absolute; top: 30px; right: 20px; z-index: 100; }
+    #settings-btn { 
+        font-size: 22px; background: var(--white); border: none; cursor: pointer; 
+        width: 45px; height: 45px; border-radius: 50%; display: flex; 
+        align-items: center; justify-content: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.2s;
+    }
+    #settings-btn:active { transform: scale(0.9); }
     
     h1 { font-size: 28px; margin: 10px 0 20px; text-align: center; }
-    h2 { font-size: 20px; margin: 20px 0 10px; color: #666; width: 100%; text-align: center; }
+    h2 { font-size: 16px; margin: 20px 0 10px; color: #888; width: 100%; text-align: center; text-transform: uppercase; letter-spacing: 1.5px; }
 
-    #setup, #game { width: 100%; max-width: 400px; display: flex; flex-direction: column; }
+    #setup, #game { width: 100%; max-width: 500px; display: flex; flex-direction: column; }
     .hidden { display: none !important; }
 
     input { 
         width: 100%; padding: 14px; font-size: 16px; border-radius: 12px; 
-        border: 2px solid #ddd; margin-bottom: 8px; outline: none;
+        border: 2px solid #ddd; margin-bottom: 8px; outline: none; -webkit-appearance: none;
+    }
+
+    #suggestion-box { 
+        background: var(--white); border: 2px solid var(--primary); color: var(--primary);
+        padding: 12px; border-radius: 12px; margin-bottom: 10px; text-align: center;
+        font-weight: bold; cursor: pointer; display: none;
     }
 
     .btn { 
@@ -51,18 +63,29 @@
         justify-content: center; margin-left: 10px; cursor: pointer;
     }
 
-    .team-toggle-label { font-weight: bold; margin-bottom: 8px; display: block; text-align: center; font-size: 14px; color: #888; }
     .team-toggle { 
         display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; 
         background: #e0e0e0; padding: 5px; border-radius: 15px; margin-bottom: 15px;
     }
-    .btn-team { 
-        padding: 12px; border-radius: 10px; border: none; background: transparent;
-        font-weight: bold; font-size: 16px; cursor: pointer;
-    }
+    .btn-team { padding: 12px; border-radius: 10px; border: none; background: transparent; font-weight: bold; font-size: 16px; cursor: pointer; }
     .btn-team.active { background: var(--white); color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
-    .team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+    .team-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 25px; }
+    
+    .game-player-btn {
+        flex: 0 1 calc(33.33% - 8px);
+        min-width: 90px;
+        height: 75px; 
+        font-size: 12px; 
+        word-break: break-all;
+        padding: 5px;
+        background: var(--primary);
+        color: white;
+        border-radius: 12px;
+        border: none;
+        font-weight: 600;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
     
     #dashboard { background: var(--white); border-radius: 16px; padding: 15px; margin-top: 30px; width: 100%; }
     table { width: 100%; border-collapse: collapse; }
@@ -75,9 +98,10 @@
         z-index: 1000; opacity: 0; pointer-events: none; transition: 0.2s;
     }
     .modal.show { opacity: 1; pointer-events: auto; }
-    .modal-content { background: var(--white); padding: 25px; width: 90%; max-width: 380px; border-radius: 20px; text-align: center; }
+    .modal-content { background: var(--white); padding: 25px; width: 90%; max-width: 380px; border-radius: 20px; text-align: center; max-height: 85vh; overflow-y: auto; }
     .modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-    .team-members-list { font-size: 12px; font-weight: normal; opacity: 0.8; margin-top: 4px; }
+    .version-tag { font-size: 10px; color: #bbb; margin-top: 15px; display: block; }
+    .help-text { text-align: left; font-size: 14px; line-height: 1.5; color: #444; }
 </style>
 </head>
 <body>
@@ -89,14 +113,12 @@
 <h1 id="appTitle">CouchGame</h1>
 
 <div id="setup">
-    <input id="nameInput" list="playerHistory" placeholder="Name..." maxlength="20">
-    <datalist id="playerHistory"></datalist>
-    
+    <input id="nameInput" placeholder="Name..." maxlength="20" oninput="checkSuggestions(this.value)">
+    <div id="suggestion-box" onclick="addSuggestedPlayer()"></div>
     <button class="btn btn-primary" onclick="addPlayer()" id="addBtn">Hinzufügen</button>
-    
     <div class="player-list" id="playerList"></div>
 
-    <span id="labelTeams" class="team-toggle-label">Anzahl der Teams</span>
+    <span id="labelTeams" style="text-align:center; font-weight:bold; margin-bottom:8px; color:#888; font-size:14px;">Anzahl der Teams</span>
     <div class="team-toggle">
         <button class="btn-team" data-team="2" onclick="selectTeam(this)">2</button>
         <button class="btn-team" data-team="3" onclick="selectTeam(this)">3</button>
@@ -114,7 +136,7 @@
 <div id="game" class="hidden">
     <div id="gameHint" style="text-align:center; color:#888; margin-bottom: 15px;">Klicke auf deinen Namen</div>
     <div id="gameContainer"></div>
-    <button class="btn btn-neutral" style="margin-top:20px;" id="exitBtn" onclick="showExitModal()">Spiel beenden</button>
+    <button class="btn btn-neutral" style="margin-top:10px;" id="exitBtn" onclick="showExitModal()">Spiel beenden</button>
 </div>
 
 <div id="modal" class="modal">
@@ -122,6 +144,16 @@
 </div>
 
 <script>
+const CURRENT_VERSION = "2.1";
+let migrationNeeded = false;
+
+const storedVersion = localStorage.getItem("app_version");
+if (storedVersion !== CURRENT_VERSION) {
+    if (localStorage.getItem("playerStats") || localStorage.getItem("players")) migrationNeeded = true;
+    localStorage.clear();
+    localStorage.setItem("app_version", CURRENT_VERSION);
+}
+
 const translations = {
     de: {
         title: "CouchGame", add: "Hinzufügen", start: "Spiel starten", teams: "Anzahl der Teams", hint: "Klicke auf deinen Namen", exit: "Spiel beenden",
@@ -130,7 +162,9 @@ const translations = {
         delAll: "Alles löschen", close: "Schließen", minPlayers: "Min. {n} Spieler!", dupName: "Schon dabei!",
         confirmDel: "Wirklich alles löschen?", confirmStats: "Statistiken zurücksetzen?", yes: "Ja, löschen", no: "Nein",
         scoreboard: "Rangliste", noData: "Keine Spiele bisher", error: "Fehler",
-        thPlayer: "Spieler", thWins: "Siege", thGames: "Spiele"
+        thPlayer: "Spieler", thWins: "Siege", thGames: "Spiele", suggest: "{n} hinzufügen?",
+        migrationTitle: "Daten-Update", migrationMsg: "Daten wurden aufgrund einer neuen Version zurückgesetzt.",
+        howTo: "Anleitung", helpContent: `<b>So wird gespielt:</b><br><br>1. Füge alle Spieler hinzu.<br>2. Wähle die Team-Anzahl.<br>3. Startet das Spiel.<br><br>Jeder Spieler klickt geheim auf seinen Namen. Die App zeigt dir:<br>- Welcher <b>andere Spieler</b> du heute bist.<br>- In welchem <b>Team</b> du bist.<br><br>Ziel ist es, Aufgaben zu erfüllen, ohne dass die anderen merken, wer du wirklich bist!`
     },
     en: {
         title: "CouchGame", add: "Add Player", start: "Start Game", teams: "Team Count", hint: "Click your name", exit: "End Game",
@@ -139,13 +173,16 @@ const translations = {
         delAll: "Delete Everything", close: "Close", minPlayers: "Min. {n} players!", dupName: "Already in!",
         confirmDel: "Clear everything?", confirmStats: "Clear stats?", yes: "Delete", no: "No",
         scoreboard: "Leaderboard", noData: "No games yet", error: "Error",
-        thPlayer: "Player", thWins: "Wins", thGames: "Games"
+        thPlayer: "Player", thWins: "Wins", thGames: "Games", suggest: "Add {n}?",
+        migrationTitle: "Data Update", migrationMsg: "Data reset due to new version.",
+        howTo: "Instructions", helpContent: `<b>How to play:</b><br><br>1. Add all players.<br>2. Choose number of teams.<br>3. Start the game.<br><br>Each player clicks their name in secret. The app shows:<br>- Which <b>other player</b> you are today.<br>- Which <b>team</b> you are in.<br><br>The goal is to complete tasks without others noticing who you really are!`
     }
 };
 
 let lang = localStorage.getItem("lang") || "de";
 let players = JSON.parse(localStorage.getItem("players")) || []; 
 let stats = JSON.parse(localStorage.getItem("playerStats")) || {}; 
+let currentSuggestion = "";
 let assignments = {}, teams = {}, selectedTeamCount = 2;
 
 function t(key, data = {}) {
@@ -159,14 +196,16 @@ window.onload = () => {
     selectTeam(document.querySelector('.btn-team[data-team="2"]'));
     renderPlayers();
     renderDashboard();
-    updateDatalist();
+    if (migrationNeeded) {
+        showModal(`<h3>${t("migrationTitle")}</h3><p>${t("migrationMsg")}</p><div class="modal-actions"><button class="btn btn-primary" onclick="closeModal()">OK</button></div>`);
+        migrationNeeded = false;
+    }
 };
 
 function updateUI() {
     document.getElementById("appTitle").innerText = t("title");
     document.getElementById("addBtn").innerText = t("add");
     document.getElementById("startBtn").innerText = t("start");
-    document.getElementById("labelTeams").innerText = t("teams");
     document.getElementById("gameHint").innerText = t("hint");
     document.getElementById("exitBtn").innerText = t("exit");
     document.getElementById("dashTitle").innerText = t("scoreboard");
@@ -176,15 +215,28 @@ function saveAll(){
     localStorage.setItem("players", JSON.stringify(players));
     localStorage.setItem("playerStats", JSON.stringify(stats));
     localStorage.setItem("lang", lang);
+    localStorage.setItem("app_version", CURRENT_VERSION);
 }
 
-function updateDatalist() {
-    const list = document.getElementById("playerHistory");
-    const historyNames = Object.keys(stats);
-    list.innerHTML = historyNames
-        .filter(name => !players.includes(name))
-        .map(name => `<option value="${name}">`)
-        .join("");
+function checkSuggestions(val) {
+    const box = document.getElementById("suggestion-box");
+    if (val.length < 1) { box.style.display = "none"; return; }
+    const found = Object.keys(stats).find(name => name.toLowerCase().startsWith(val.toLowerCase()) && !players.includes(name));
+    if (found) {
+        currentSuggestion = found;
+        box.innerText = t("suggest", {n: found});
+        box.style.display = "block";
+    } else { box.style.display = "none"; }
+}
+
+function addSuggestedPlayer() {
+    if (currentSuggestion) {
+        players.push(currentSuggestion);
+        if(!stats[currentSuggestion] || typeof stats[currentSuggestion] !== 'object') stats[currentSuggestion] = {wins:0, total:0};
+        document.getElementById("nameInput").value = "";
+        document.getElementById("suggestion-box").style.display = "none";
+        saveAll(); renderPlayers(); renderDashboard();
+    }
 }
 
 function addPlayer(){
@@ -192,28 +244,20 @@ function addPlayer(){
     let name = input.value.trim();
     if(!name) return;
     if(players.includes(name)) { showAlert(t("dupName")); return; }
-    
     players.push(name);
-    if(!stats[name]) stats[name] = {wins:0, total:0};
-    
+    if(!stats[name] || typeof stats[name] !== 'object') stats[name] = {wins:0, total:0};
     input.value="";
-    saveAll(); 
-    renderPlayers(); 
-    renderDashboard();
-    updateDatalist();
+    document.getElementById("suggestion-box").style.display = "none";
+    saveAll(); renderPlayers(); renderDashboard();
 }
 
 function renderPlayers(){
-    const list = document.getElementById("playerList");
-    list.innerHTML = players.map(p => `<div class="player-chip">${p}<div class="delete-x" onclick="removePlayer('${p}')">×</div></div>`).join("");
+    document.getElementById("playerList").innerHTML = players.map(p => `<div class="player-chip">${p}<div class="delete-x" onclick="removePlayer('${p}')">×</div></div>`).join("");
 }
 
 function removePlayer(name) {
     players = players.filter(p => p !== name);
-    saveAll(); 
-    renderPlayers(); 
-    renderDashboard();
-    updateDatalist();
+    saveAll(); renderPlayers(); renderDashboard();
 }
 
 function selectTeam(btn){
@@ -227,12 +271,10 @@ function startGame(){
     document.getElementById("setup").classList.add("hidden");
     document.getElementById("game").classList.remove("hidden");
     document.getElementById("settings-container").classList.add("hidden");
-    
     let pool = players.map((_, i) => (i % selectedTeamCount) + 1).sort(() => Math.random() - 0.5);
     players.forEach((p, i) => teams[p] = pool[i]);
     let roles = [...players].sort(() => Math.random() - 0.5);
     players.forEach((p, i) => assignments[p] = roles[i]);
-    
     renderGameScreen();
 }
 
@@ -240,8 +282,9 @@ function renderGameScreen(){
     const container = document.getElementById("gameContainer");
     container.innerHTML = "";
     for(let i=1; i <= selectedTeamCount; i++){
+        let teamPlayers = players.filter(p => teams[p] === i);
         container.innerHTML += `<h2>Team ${i}</h2><div class="team-grid">` + 
-            players.filter(p => teams[p] === i).map(p => `<button class="btn btn-primary" style="height:60px;font-size:14px;" onclick="showNameModal('${p}')">${p}</button>`).join("") + `</div>`;
+            teamPlayers.map(p => `<button class="game-player-btn" onclick="showNameModal('${p}')">${p}</button>`).join("") + `</div>`;
     }
 }
 
@@ -255,6 +298,10 @@ function showAlert(msg) {
     showModal(`<h3>${t("error")}</h3><p>${msg}</p><div class="modal-actions"><button class="btn btn-primary" onclick="closeModal()">OK</button></div>`);
 }
 
+function showHelp() {
+    showModal(`<h3>${t("howTo")}</h3><p class="help-text">${t("helpContent")}</p><div class="modal-actions"><button class="btn btn-primary" onclick="showSettings()">OK</button></div>`);
+}
+
 function showNameModal(p){
     showModal(`<div>${t("youAre", {p: p})}</div><div style="font-size:28px; color:var(--primary); font-weight:bold; margin:15px 0;">${assignments[p]}</div><div class="modal-actions"><button class="btn btn-primary" onclick="closeModal()">OK</button></div>`);
 }
@@ -263,13 +310,19 @@ function showExitModal(){
     let btns = "";
     for(let i=1; i <= selectedTeamCount; i++) {
         const members = players.filter(p => teams[p] === i).join(", ");
-        btns += `<button class="btn btn-primary" onclick="handleEndGame(${i})">${t("winnerTeam", {n: i})}<div class="team-members-list">${members}</div></button>`;
+        btns += `<button class="btn btn-primary" onclick="handleEndGame(${i})">${t("winnerTeam", {n: i})}<div style="font-size:10px; font-weight:normal; opacity:0.8;">${members}</div></button>`;
     }
     showModal(`<h3>${t("winnerQuery")}</h3><div class="modal-actions">${btns}<button class="btn btn-danger" onclick="handleEndGame(null)">${t("noWinner")}</button><button class="btn btn-neutral" onclick="closeModal()">${t("back")}</button></div>`);
 }
 
 function handleEndGame(winner){
-    if(winner !== null) players.forEach(p => { stats[p].total++; if(teams[p] === winner) stats[p].wins++; });
+    if(winner !== null) {
+        players.forEach(p => { 
+            if(!stats[p]) stats[p] = {wins:0, total:0};
+            stats[p].total++; 
+            if(teams[p] === winner) stats[p].wins++; 
+        });
+    }
     saveAll(); closeModal();
     document.getElementById("game").classList.add("hidden");
     document.getElementById("setup").classList.remove("hidden");
@@ -278,13 +331,18 @@ function handleEndGame(winner){
 }
 
 function showSettings() {
-    showModal(`<h3>${t("settings")}</h3><div style="display:flex; gap:10px; margin:15px 0;">
-        <button class="btn ${lang==='de'?'btn-primary':'btn-neutral'}" onclick="changeLang('de')">DE</button>
-        <button class="btn ${lang==='en'?'btn-primary':'btn-neutral'}" onclick="changeLang('en')">EN</button>
-        </div><div class="modal-actions">
-        <button class="btn" style="background:#f39c12; color:white" onclick="confirmReset('stats')">${t("delStats")}</button>
-        <button class="btn btn-danger" onclick="confirmReset('all')">${t("delAll")}</button>
-        <button class="btn btn-neutral" onclick="closeModal()">${t("close")}</button></div>`);
+    showModal(`<h3>${t("settings")}</h3>
+        <div style="display:flex; gap:10px; margin:15px 0;">
+            <button class="btn ${lang==='de'?'btn-primary':'btn-neutral'}" onclick="changeLang('de')">DE</button>
+            <button class="btn ${lang==='en'?'btn-primary':'btn-neutral'}" onclick="changeLang('en')">EN</button>
+        </div>
+        <button class="btn btn-neutral" style="margin-bottom:10px;" onclick="showHelp()">❓ ${t("howTo")}</button>
+        <div class="modal-actions">
+            <button class="btn" style="background:#f39c12; color:white" onclick="confirmReset('stats')">${t("delStats")}</button>
+            <button class="btn btn-danger" onclick="confirmReset('all')">${t("delAll")}</button>
+            <button class="btn btn-neutral" onclick="closeModal()">${t("close")}</button>
+        </div>
+        <span class="version-tag">Version ${CURRENT_VERSION}</span>`);
 }
 
 function confirmReset(type) {
@@ -295,11 +353,11 @@ function confirmReset(type) {
 
 function changeLang(l) { lang = l; saveAll(); updateUI(); showSettings(); renderDashboard(); }
 function clearStats() { stats = {}; players.forEach(p => stats[p] = {wins:0, total:0}); saveAll(); renderDashboard(); closeModal(); }
-function fullReset() { players = []; stats = {}; saveAll(); renderPlayers(); renderDashboard(); updateDatalist(); closeModal(); }
+function fullReset() { players = []; stats = {}; saveAll(); renderPlayers(); renderDashboard(); closeModal(); }
 
 function renderDashboard(){
     const content = document.getElementById("dashContent");
-    const list = Object.keys(stats).filter(p => stats[p].total > 0).sort((a,b) => stats[b].wins - stats[a].wins);
+    const list = Object.keys(stats).filter(p => stats[p] && stats[p].total > 0).sort((a,b) => stats[b].wins - stats[a].wins);
     if(!list.length) { content.innerHTML = `<p style="text-align:center; color:#999; font-style:italic;">${t("noData")}</p>`; return; }
     content.innerHTML = `<table><tr><th>#</th><th>${t("thPlayer")}</th><th>${t("thWins")}</th><th>${t("thGames")}</th><th>%</th></tr>` + 
         list.map((p, i) => `<tr><td style="font-weight:bold;color:var(--primary);width:25px;">${i+1}</td><td>${p}</td><td>${stats[p].wins}</td><td>${stats[p].total}</td><td>${((stats[p].wins/stats[p].total)*100).toFixed(0)}%</td></tr>`).join("") + "</table>";
