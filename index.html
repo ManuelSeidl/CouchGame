@@ -2,390 +2,308 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CouchGame</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CouchGame Pro</title>
 <style>
-body {
-  font-family: 'Segoe UI', sans-serif;
-  margin: 0;
-  padding: 20px;
-  background: #f5f5f5;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+    :root { 
+        --primary: #3498db; --secondary: #2ecc71; --danger: #e74c3c; 
+        --dark: #2c3e50; --gray: #f5f5f5; --white: #ffffff;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { 
+        font-family: 'Segoe UI', Roboto, sans-serif; 
+        margin: 0; padding: 20px; background: var(--gray); 
+        display: flex; flex-direction: column; align-items: center; 
+        color: var(--dark);
+    }
 
-h1#appTitle {
-  font-size: 32px;
-  color: #2c3e50;
-  margin-bottom: 10px;
-  text-align: center;
-}
+    #settings-container { position: absolute; top: 15px; right: 15px; z-index: 100; }
+    #settings-btn { font-size: 28px; background: none; border: none; cursor: pointer; padding: 5px; }
+    
+    h1 { font-size: 28px; margin: 10px 0 20px; text-align: center; }
+    h2 { font-size: 20px; margin: 20px 0 10px; color: #666; width: 100%; text-align: center; }
 
-h2 {
-  margin-top: 20px;
-  color: #555;
-  font-size: 20px;
-  text-align: center;
-}
+    #setup, #game { width: 100%; max-width: 400px; display: flex; flex-direction: column; }
+    .hidden { display: none !important; }
 
-input, button {
-  padding: 10px;
-  margin: 5px 0;
-  font-size: 16px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
+    input { 
+        width: 100%; padding: 14px; font-size: 16px; border-radius: 12px; 
+        border: 2px solid #ddd; margin-bottom: 8px; outline: none;
+    }
 
-input { width: 200px; }
+    .btn { 
+        width: 100%; padding: 14px; font-size: 16px; font-weight: 600; border-radius: 12px; 
+        border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .btn-primary { background: var(--primary); color: var(--white); }
+    .btn-success { background: var(--secondary); color: var(--white); margin-top: 15px; }
+    .btn-danger { background: var(--danger); color: var(--white); }
+    .btn-neutral { background: #d0d0d0; color: #333; }
 
-.player-list {
-  margin: 15px 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-}
+    .player-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 15px 0; }
+    .player-chip { 
+        background: var(--white); padding: 8px 14px; border-radius: 25px; 
+        display: flex; align-items: center; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .delete-x { 
+        background: var(--danger); color: var(--white); width: 20px; height: 20px; 
+        border-radius: 50%; font-size: 12px; display: flex; align-items: center; 
+        justify-content: center; margin-left: 10px; cursor: pointer;
+    }
 
-.player {
-  background: #fff;
-  padding: 10px 15px;
-  margin: 5px;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  font-weight: bold;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  transition: transform 0.2s;
-}
+    .team-toggle-label { font-weight: bold; margin-bottom: 8px; display: block; text-align: center; font-size: 14px; color: #888; }
+    .team-toggle { 
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; 
+        background: #e0e0e0; padding: 5px; border-radius: 15px; margin-bottom: 15px;
+    }
+    .btn-team { 
+        padding: 12px; border-radius: 10px; border: none; background: transparent;
+        font-weight: bold; font-size: 16px; cursor: pointer;
+    }
+    .btn-team.active { background: var(--white); color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
-.player:hover { transform: scale(1.05); }
+    .team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+    
+    #dashboard { background: var(--white); border-radius: 16px; padding: 15px; margin-top: 30px; width: 100%; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; color: #888; font-size: 11px; padding: 8px; }
+    td { padding: 12px 8px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
 
-.delete-btn {
-  background: #e74c3c;
-  color: white;
-  border-radius: 50%;
-  font-size: 12px;
-  width: 18px; height: 18px;
-  line-height: 18px;
-  text-align: center;
-  margin-left: 10px;
-  cursor: pointer;
-}
-
-.btn {
-  padding: 10px;
-  font-size: 16px;
-  border-radius: 10px;
-  background: #3498db;
-  color: white;
-  cursor: pointer;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  transition: 0.2s all;
-  margin: 5px 0;
-  text-align: center;
-}
-
-.btn:hover { background: #2980b9; transform: scale(1.05); }
-
-.hidden { display: none; }
-
-.modal {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  opacity: 0;
-  pointer-events: none;
-  transition: 0.3s;
-}
-
-.modal.show {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.modal-content {
-  background: #fff;
-  padding: 25px 20px;
-  max-width: 320px;
-  width: 90%;
-  border-radius: 15px;
-  font-size: 20px;
-  font-weight: bold;
-  text-align: center;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-  animation: fadeIn 0.3s ease-out;
-}
-
-.modal-buttons {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-.modal-buttons .btn {
-  width: 120px;
-  font-size: 16px;
-  padding: 12px 0;
-  margin: 0 5px;
-}
-
-@keyframes fadeIn {
-  from { transform: scale(0.7); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-.team-section {
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  margin-bottom: 15px;
-}
-
-.team-section .btn {
-  flex: 1 1 28%;
-  min-width: 80px;
-  max-width: 100px;
-  height: 50px;
-  font-size: 16px;
-}
-
-#game button.beenden {
-  width: 220px;
-  background:#555;
-  margin: 20px auto;
-  display: block;
-}
-
-.team-btn {
-  width: 50px;
-  background: #3498db;
-  color: white;
-  border-radius: 10px;
-  margin-left: 5px;
-}
-
-.team-btn.active { background: #27ae60; }
-
-.team-selection {
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
-
-#setup {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start; /* linksbündig */
-  max-width: 400px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-#setup.hidden, #game.hidden {
-  display: none; /* komplett ausblenden */
-}
-
-#game {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: 400px;
-}
-
-#gameHint {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 10px;
-  text-align: center;
-}
+    .modal { 
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; 
+        z-index: 1000; opacity: 0; pointer-events: none; transition: 0.2s;
+    }
+    .modal.show { opacity: 1; pointer-events: auto; }
+    .modal-content { background: var(--white); padding: 25px; width: 90%; max-width: 380px; border-radius: 20px; text-align: center; }
+    .modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+    .team-members-list { font-size: 12px; font-weight: normal; opacity: 0.8; margin-top: 4px; }
 </style>
 </head>
 <body>
 
+<div id="settings-container">
+    <button id="settings-btn" onclick="showSettings()">⚙️</button>
+</div>
+
 <h1 id="appTitle">CouchGame</h1>
 
-<!-- SETUP -->
 <div id="setup">
-  <input id="nameInput" placeholder="Name eingeben" maxlength="20">
-  <button class="btn" onclick="addPlayer()">Hinzufügen</button>
+    <input id="nameInput" list="playerHistory" placeholder="Name..." maxlength="20">
+    <datalist id="playerHistory"></datalist>
+    
+    <button class="btn btn-primary" onclick="addPlayer()" id="addBtn">Hinzufügen</button>
+    
+    <div class="player-list" id="playerList"></div>
 
-  <div class="player-list" id="playerList"></div>
+    <span id="labelTeams" class="team-toggle-label">Anzahl der Teams</span>
+    <div class="team-toggle">
+        <button class="btn-team" data-team="2" onclick="selectTeam(this)">2</button>
+        <button class="btn-team" data-team="3" onclick="selectTeam(this)">3</button>
+        <button class="btn-team" data-team="4" onclick="selectTeam(this)">4</button>
+    </div>
 
-  <!-- Teamanzahl Buttons inline -->
-  <div class="team-selection">
-    <label style="font-weight:bold;">Teamanzahl:</label>
-    <button class="btn team-btn" data-team="2" onclick="selectTeam(this)">2</button>
-    <button class="btn team-btn" data-team="3" onclick="selectTeam(this)">3</button>
-    <button class="btn team-btn" data-team="4" onclick="selectTeam(this)">4</button>
-  </div>
-
-  <button class="btn" style="width:220px;" onclick="startGame()">Spiel starten</button>
+    <button class="btn btn-success" id="startBtn" onclick="startGame()">Spiel starten</button>
+    
+    <div id="dashboard">
+        <h3 id="dashTitle" style="text-align:center;margin:0 0 10px 0;">Rangliste</h3>
+        <div id="dashContent"></div>
+    </div>
 </div>
 
-<!-- GAME -->
 <div id="game" class="hidden">
-  <div id="gameHint">Klicke auf deinen Namen</div>
-  <div id="gameContainer"></div>
-  <button class="btn beenden" onclick="showExitModal()">Beenden</button>
+    <div id="gameHint" style="text-align:center; color:#888; margin-bottom: 15px;">Klicke auf deinen Namen</div>
+    <div id="gameContainer"></div>
+    <button class="btn btn-neutral" style="margin-top:20px;" id="exitBtn" onclick="showExitModal()">Spiel beenden</button>
 </div>
 
-<!-- MODAL -->
-<div id="modal" class="modal" onclick="closeModal()">
-  <div class="modal-content" id="modalText"></div>
+<div id="modal" class="modal">
+    <div class="modal-content" id="modalText"></div>
 </div>
 
 <script>
-let players = JSON.parse(localStorage.getItem("players")) || [];
-let assignments = {};
-let teams = {};
-let selectedTeamCount = 2;
+const translations = {
+    de: {
+        title: "CouchGame", add: "Hinzufügen", start: "Spiel starten", teams: "Anzahl der Teams", hint: "Klicke auf deinen Namen", exit: "Spiel beenden",
+        winnerQuery: "Wer hat gewonnen?", winnerTeam: "Team {n} gewinnt", noWinner: "Spiel abbrechen", back: "Zurück",
+        youAre: "{p}, du bist:", settings: "Optionen", lang: "Sprache:", delStats: "Statistiken löschen",
+        delAll: "Alles löschen", close: "Schließen", minPlayers: "Min. {n} Spieler!", dupName: "Schon dabei!",
+        confirmDel: "Wirklich alles löschen?", confirmStats: "Statistiken zurücksetzen?", yes: "Ja, löschen", no: "Nein",
+        scoreboard: "Rangliste", noData: "Keine Spiele bisher", error: "Fehler",
+        thPlayer: "Spieler", thWins: "Siege", thGames: "Spiele"
+    },
+    en: {
+        title: "CouchGame", add: "Add Player", start: "Start Game", teams: "Team Count", hint: "Click your name", exit: "End Game",
+        winnerQuery: "Who won?", winnerTeam: "Team {n} wins", noWinner: "Cancel Game", back: "Back",
+        youAre: "{p}, you are:", settings: "Settings", lang: "Language:", delStats: "Clear Stats",
+        delAll: "Delete Everything", close: "Close", minPlayers: "Min. {n} players!", dupName: "Already in!",
+        confirmDel: "Clear everything?", confirmStats: "Clear stats?", yes: "Delete", no: "No",
+        scoreboard: "Leaderboard", noData: "No games yet", error: "Error",
+        thPlayer: "Player", thWins: "Wins", thGames: "Games"
+    }
+};
 
-function savePlayers(){ localStorage.setItem("players", JSON.stringify(players)); }
+let lang = localStorage.getItem("lang") || "de";
+let players = JSON.parse(localStorage.getItem("players")) || []; 
+let stats = JSON.parse(localStorage.getItem("playerStats")) || {}; 
+let assignments = {}, teams = {}, selectedTeamCount = 2;
+
+function t(key, data = {}) {
+    let text = translations[lang][key] || key;
+    for (let k in data) text = text.replace(`{${k}}`, data[k]);
+    return text;
+}
+
+window.onload = () => {
+    updateUI();
+    selectTeam(document.querySelector('.btn-team[data-team="2"]'));
+    renderPlayers();
+    renderDashboard();
+    updateDatalist();
+};
+
+function updateUI() {
+    document.getElementById("appTitle").innerText = t("title");
+    document.getElementById("addBtn").innerText = t("add");
+    document.getElementById("startBtn").innerText = t("start");
+    document.getElementById("labelTeams").innerText = t("teams");
+    document.getElementById("gameHint").innerText = t("hint");
+    document.getElementById("exitBtn").innerText = t("exit");
+    document.getElementById("dashTitle").innerText = t("scoreboard");
+}
+
+function saveAll(){
+    localStorage.setItem("players", JSON.stringify(players));
+    localStorage.setItem("playerStats", JSON.stringify(stats));
+    localStorage.setItem("lang", lang);
+}
+
+function updateDatalist() {
+    const list = document.getElementById("playerHistory");
+    const historyNames = Object.keys(stats);
+    list.innerHTML = historyNames
+        .filter(name => !players.includes(name))
+        .map(name => `<option value="${name}">`)
+        .join("");
+}
 
 function addPlayer(){
-  const input = document.getElementById("nameInput");
-  let name = input.value.trim();
-  if(!name) return;
-  if(name.length > 20) name = name.slice(0,20);
-  players.push(name);
-  input.value="";
-  savePlayers();
-  renderPlayers();
+    const input = document.getElementById("nameInput");
+    let name = input.value.trim();
+    if(!name) return;
+    if(players.includes(name)) { showAlert(t("dupName")); return; }
+    
+    players.push(name);
+    if(!stats[name]) stats[name] = {wins:0, total:0};
+    
+    input.value="";
+    saveAll(); 
+    renderPlayers(); 
+    renderDashboard();
+    updateDatalist();
 }
 
 function renderPlayers(){
-  const list = document.getElementById("playerList");
-  list.innerHTML="";
-  players.forEach(p=>{
-    const div=document.createElement("div");
-    div.className="player";
-    div.innerText=p;
-
-    const del=document.createElement("div");
-    del.className="delete-btn";
-    del.innerText="×";
-    del.onclick=(e)=>{
-      e.stopPropagation();
-      players.splice(players.indexOf(p),1);
-      savePlayers();
-      renderPlayers();
-    };
-    div.appendChild(del);
-    list.appendChild(div);
-  });
+    const list = document.getElementById("playerList");
+    list.innerHTML = players.map(p => `<div class="player-chip">${p}<div class="delete-x" onclick="removePlayer('${p}')">×</div></div>`).join("");
 }
 
-function selectTeam(button){
-  document.querySelectorAll('.team-btn').forEach(b=>b.classList.remove('active'));
-  button.classList.add('active');
-  selectedTeamCount = parseInt(button.getAttribute('data-team'));
+function removePlayer(name) {
+    players = players.filter(p => p !== name);
+    saveAll(); 
+    renderPlayers(); 
+    renderDashboard();
+    updateDatalist();
 }
 
-function shuffle(array){
-  for(let i=array.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [array[i],array[j]]=[array[j],array[i]];
-  }
-  return array;
+function selectTeam(btn){
+    document.querySelectorAll('.btn-team').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedTeamCount = parseInt(btn.dataset.team);
 }
 
 function startGame(){
-  if(players.length < 2){ alert("Mindestens 2 Spieler!"); return; }
-  const teamCount = selectedTeamCount;
-
-  // Teams zufällig zuweisen
-  let teamNumbers=[];
-  for(let i=1;i<=teamCount;i++) teamNumbers.push(i);
-  let shuffledTeams=shuffle([...Array(players.length).keys()].map(i=>teamNumbers[i%teamCount]));
-  teams={};
-  players.forEach((p,i)=> teams[p]=shuffledTeams[i]);
-
-  // Namen zufällig zuweisen
-  const shuffledNames = shuffle([...players]);
-  assignments={};
-  players.forEach((p,i)=> assignments[p]=shuffledNames[i]);
-
-  document.getElementById("setup").classList.add("hidden");
-  document.getElementById("game").classList.remove("hidden");
-  renderGameScreen();
+    if(players.length < selectedTeamCount){ showAlert(t("minPlayers", {n: selectedTeamCount})); return; }
+    document.getElementById("setup").classList.add("hidden");
+    document.getElementById("game").classList.remove("hidden");
+    document.getElementById("settings-container").classList.add("hidden");
+    
+    let pool = players.map((_, i) => (i % selectedTeamCount) + 1).sort(() => Math.random() - 0.5);
+    players.forEach((p, i) => teams[p] = pool[i]);
+    let roles = [...players].sort(() => Math.random() - 0.5);
+    players.forEach((p, i) => assignments[p] = roles[i]);
+    
+    renderGameScreen();
 }
 
 function renderGameScreen(){
-  const container=document.getElementById("gameContainer");
-  container.innerHTML="";
-
-  const sortedPlayers=[...players].sort((a,b)=>teams[a]-teams[b]);
-  let currentTeam=0;
-  sortedPlayers.forEach(p=>{
-    if(teams[p]!==currentTeam){
-      const teamHeader=document.createElement("h2");
-      teamHeader.innerText="Team " + teams[p];
-      container.appendChild(teamHeader);
-
-      const teamSection=document.createElement("div");
-      teamSection.className="team-section";
-      container.appendChild(teamSection);
-      currentTeam=teams[p];
+    const container = document.getElementById("gameContainer");
+    container.innerHTML = "";
+    for(let i=1; i <= selectedTeamCount; i++){
+        container.innerHTML += `<h2>Team ${i}</h2><div class="team-grid">` + 
+            players.filter(p => teams[p] === i).map(p => `<button class="btn btn-primary" style="height:60px;font-size:14px;" onclick="showNameModal('${p}')">${p}</button>`).join("") + `</div>`;
     }
-    const teamSection=document.getElementsByClassName("team-section")[currentTeam-1];
-    const btn=document.createElement("button");
-    btn.className="btn";
-    btn.innerText=p;
-    btn.onclick=()=>showNameModal(p);
-    teamSection.appendChild(btn);
-  });
 }
 
-function showNameModal(player){
-  const modal=document.getElementById("modal");
-  document.getElementById("modalText").innerHTML=
-    `${player}: Du bist ${assignments[player]}<div class="modal-buttons"><button class="btn" onclick="closeModal()">OK</button></div>`;
-  modal.classList.add("show");
+function showModal(content) {
+    document.getElementById("modalText").innerHTML = content;
+    document.getElementById("modal").classList.add("show");
+}
+function closeModal(){ document.getElementById("modal").classList.remove("show"); }
+
+function showAlert(msg) {
+    showModal(`<h3>${t("error")}</h3><p>${msg}</p><div class="modal-actions"><button class="btn btn-primary" onclick="closeModal()">OK</button></div>`);
 }
 
-function closeModal(){
-  document.getElementById("modal").classList.remove("show");
+function showNameModal(p){
+    showModal(`<div>${t("youAre", {p: p})}</div><div style="font-size:28px; color:var(--primary); font-weight:bold; margin:15px 0;">${assignments[p]}</div><div class="modal-actions"><button class="btn btn-primary" onclick="closeModal()">OK</button></div>`);
 }
 
 function showExitModal(){
-  const modal=document.getElementById("modal");
-  document.getElementById("modalText").innerHTML=
-    "Spiel beenden? Der aktuelle Stand geht verloren" +
-    "<div class='modal-buttons'>" +
-    "<button class='btn' onclick='exitGame()'>Ja, beenden</button>" +
-    "<button class='btn' style='background:#e74c3c;' onclick='closeModal()'>Abbrechen</button>" +
-    "</div>";
-  modal.classList.add("show");
+    let btns = "";
+    for(let i=1; i <= selectedTeamCount; i++) {
+        const members = players.filter(p => teams[p] === i).join(", ");
+        btns += `<button class="btn btn-primary" onclick="handleEndGame(${i})">${t("winnerTeam", {n: i})}<div class="team-members-list">${members}</div></button>`;
+    }
+    showModal(`<h3>${t("winnerQuery")}</h3><div class="modal-actions">${btns}<button class="btn btn-danger" onclick="handleEndGame(null)">${t("noWinner")}</button><button class="btn btn-neutral" onclick="closeModal()">${t("back")}</button></div>`);
 }
 
-function exitGame(){
-  closeModal();
-  backToSetup();
+function handleEndGame(winner){
+    if(winner !== null) players.forEach(p => { stats[p].total++; if(teams[p] === winner) stats[p].wins++; });
+    saveAll(); closeModal();
+    document.getElementById("game").classList.add("hidden");
+    document.getElementById("setup").classList.remove("hidden");
+    document.getElementById("settings-container").classList.remove("hidden");
+    renderDashboard();
 }
 
-function backToSetup(){
-  document.getElementById("game").classList.add("hidden");
-  document.getElementById("setup").classList.remove("hidden");
-  assignments={};
-  teams={};
-  renderPlayers();
+function showSettings() {
+    showModal(`<h3>${t("settings")}</h3><div style="display:flex; gap:10px; margin:15px 0;">
+        <button class="btn ${lang==='de'?'btn-primary':'btn-neutral'}" onclick="changeLang('de')">DE</button>
+        <button class="btn ${lang==='en'?'btn-primary':'btn-neutral'}" onclick="changeLang('en')">EN</button>
+        </div><div class="modal-actions">
+        <button class="btn" style="background:#f39c12; color:white" onclick="confirmReset('stats')">${t("delStats")}</button>
+        <button class="btn btn-danger" onclick="confirmReset('all')">${t("delAll")}</button>
+        <button class="btn btn-neutral" onclick="closeModal()">${t("close")}</button></div>`);
 }
 
-// Standardmäßig Team 2 aktiv markieren beim Laden
-window.onload = function(){
-  selectTeam(document.querySelector('.team-btn[data-team="2"]'));
-  renderPlayers();
-};
+function confirmReset(type) {
+    showModal(`<h3>${type==='all'?t("confirmDel"):t("confirmStats")}</h3><div class="modal-actions">
+        <button class="btn btn-danger" onclick="${type==='all'?'fullReset()':'clearStats()'}">${t("yes")}</button>
+        <button class="btn btn-neutral" onclick="showSettings()">${t("no")}</button></div>`);
+}
+
+function changeLang(l) { lang = l; saveAll(); updateUI(); showSettings(); renderDashboard(); }
+function clearStats() { stats = {}; players.forEach(p => stats[p] = {wins:0, total:0}); saveAll(); renderDashboard(); closeModal(); }
+function fullReset() { players = []; stats = {}; saveAll(); renderPlayers(); renderDashboard(); updateDatalist(); closeModal(); }
+
+function renderDashboard(){
+    const content = document.getElementById("dashContent");
+    const list = Object.keys(stats).filter(p => stats[p].total > 0).sort((a,b) => stats[b].wins - stats[a].wins);
+    if(!list.length) { content.innerHTML = `<p style="text-align:center; color:#999; font-style:italic;">${t("noData")}</p>`; return; }
+    content.innerHTML = `<table><tr><th>#</th><th>${t("thPlayer")}</th><th>${t("thWins")}</th><th>${t("thGames")}</th><th>%</th></tr>` + 
+        list.map((p, i) => `<tr><td style="font-weight:bold;color:var(--primary);width:25px;">${i+1}</td><td>${p}</td><td>${stats[p].wins}</td><td>${stats[p].total}</td><td>${((stats[p].wins/stats[p].total)*100).toFixed(0)}%</td></tr>`).join("") + "</table>";
+}
 </script>
 </body>
 </html>
